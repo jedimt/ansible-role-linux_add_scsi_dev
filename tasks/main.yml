@@ -1,0 +1,32 @@
+---
+# tasks file for ansible-role-linux-add-scsi-dev
+
+- name: Ensure sg3-utils package is installed
+  ansible.builtin.apt:
+    name:
+      - sg3-utils
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Run rescan-scsi-bus.sh to ensure volumes are mounted
+  ansible.builtin.command:
+    rescan-scsi-bus.sh
+  register: rescan_results
+  changed_when: "'0 new' not in rescan_results.stdout"
+
+# This is a hack, but my head hurts
+# Get the last available /dev/sd device and assume that is what we want to use. Yes, I know
+# this is fragile and can only deal with one volume at a time.
+- name: Get list of Nebulon host SCSI devs
+  ansible.builtin.shell:
+    lsscsi -U -i | grep -i nebulon | grep -v sda | grep sd | tail -1 | awk '{print $4}'
+  changed_when: false
+  register: available_sd_devices
+
+# Take only the last device
+# hard coded but I'm out of ideas on how to do this dynamically when more than one Nebulon
+# device (that isn't boot) is mounted
+- name: Set available SCSI devices
+  ansible.builtin.set_fact:
+    available_linux_devices: "{{ available_sd_devices.stdout_lines }}"
