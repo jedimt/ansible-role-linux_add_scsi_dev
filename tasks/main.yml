@@ -24,8 +24,8 @@
   changed_when: false
   register: available_sd_devices
 
-# Take only the last device
-# hard coded but I'm out of ideas on how to do this dynamically when more than one Nebulon
+# Take only the last (hopefully correct!) device
+# Hard coded but I'm out of ideas on how to do this dynamically when more than one Nebulon
 # device (that isn't boot) is mounted
 - name: Set available SCSI devices
   ansible.builtin.set_fact:

@@ -11,28 +11,98 @@ Hosts require the `sg3_utils` package to provide the `rescan-scsi-bus.sh` script
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Variables are defined in the defaults/main.yml file. In this example, the SPU serial numbers are stored in an ansible vault as well.
+
+    # State for all volumes (present|absent)
+    volume_state: present
+
+    # Specify LUN export method (does not affect underlying volume)
+    # (present|all) -> All nPod servers can access export
+    # (host) -> Make export available to a single host. Requires host_uuid
+    # (local) -> Make export available only to the local host that owns the volume
+    # (absent) -> Remove the volume export
+    export_type: local
+
+    # nPod name to use when managing volumes/exports
+    npod_name: "K8s_Lenovo"
+
+    host_uuid:
+
+    # List of volumes to manage (create or remove)
+    volumes:
+      - name: "server-10-local-kadalu"
+        size: 1000000000000
+        mirrored: true
+        owner_spu_serial: "{{ server-10.spu-serial }}"
+        backup_spu_serial: "{{ server-09-spu-serial }}"
+        state: "{{ volume_state }}"
+
+      - name: "server-11-local-kadalu"
+        size: 1000000000000
+        mirrored: true
+        owner_spu_serial: "{{ server-11-spu-serial }}"
+        backup_spu_serial: "{{server-12-spu-serial }}"
+        state: "{{ volume_state }}"
+
+      - name: "server-12-local-kadalu"
+        size: 1000000000000
+        mirrored: true
+        owner_spu_serial: "{{server-12-spu-serial }}"
+        backup_spu_serial: "{{ server-11-spu-serial }}"
+        state: "{{ volume_state }}"
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+This role requires that the `jedimt.nebulon_manage_volumes` role be executed to provision volumes from Nebulon to use.
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+    # ===========================================================================
+    # Create Nebulon Volumes
+    # ===========================================================================
 
-    - hosts: servers
+    - name: Create Nebulon Volumes
+      hosts: localhost
+      connection: local
+      tags: play_neb_vols
+      gather_facts: false
+
+      # module_defaults requires nebulon.nebulon_on version 1.2.1 or later
+      module_defaults:
+        group/nebulon.nebulon_on.nebulon:
+          neb_username: "{{ vault_neb_username }}"
+          neb_password: "{{ vault_neb_password }}"
+
+      vars_files:
+        # Ansible vault with all required passwords
+        - "../../credentials.yml"
+        # Ansible vault with server and SPU serials
+        - "../../serials.yml"
+
       roles:
-         - { role: username.rolename, x: 42 }
+        - { role: jedimt.nebulon_manage_volumes }
+
+    # ===========================================================================
+    # Mount new volumes to Linux hosts
+    # ===========================================================================
+
+    - name: Mount new volumes to hosts
+      hosts: k8s_nodes
+      tags: play_scsi_dev
+      gather_facts: true
+
+      roles:
+        - { role: jeditmt.linux_add_scsi_dev }
 
 License
 -------
 
-BSD
+MIT
 
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Aaron Patten
+aaronpatten@gmail.com
