@@ -11,7 +11,11 @@ Hosts require the `sg3_utils` package to provide the `rescan-scsi-bus.sh` script
 Role Variables
 --------------
 
-None.
+    # Set if we should create a filesystem (true) or leave as raw device (false)
+    create_fs: true
+
+    # Filesystem type - required if create_fs is true (ext4|xfs)
+    fstype: xfs
 
 Dependencies
 ------------
@@ -56,7 +60,13 @@ Example Playbook
       gather_facts: true
 
       roles:
-        - { role: jeditmt.linux_add_scsi_dev }
+        - { role: jeditmt.linux_add_scsi_dev,
+            # Create a filesystem (true) or leave as raw device (false)
+            create_fs: true
+
+            # Filesystem type - required if create_fs is true (ext4|xfs)
+            fstype: xfs
+        }
 
 License
 -------
