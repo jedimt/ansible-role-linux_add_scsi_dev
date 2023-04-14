@@ -1,2 +1,8 @@
 ---
 # defaults file for ansible-role-linux-add-scsi-dev
+
+# Set if we should create a filesystem (true) or leave as raw device (false)
+create_fs: true
+
+# Filesystem type - required if create_fs is true (ext4|xfs)
+fstype: xfs

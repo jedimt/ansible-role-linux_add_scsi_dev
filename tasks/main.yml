@@ -20,7 +20,8 @@
 # this is fragile and can only deal with one volume at a time.
 - name: Get list of Nebulon host SCSI devs
   ansible.builtin.shell:
-    lsscsi -U -i | grep -i nebulon | grep -v sda | grep sd | tail -1 | awk '{print $4}'
+    # lsscsi -U -i | grep -i nebulon | grep -v sda | grep sd | tail -1 | awk '{print $4}'
+    lsblk -S | grep sd | tail -1 | cut -d " " -f 1
   changed_when: false
   register: available_sd_devices
 
@@ -29,4 +30,19 @@
 # device (that isn't boot) is mounted
 - name: Set available SCSI devices
   ansible.builtin.set_fact:
-    available_linux_devices: "{{ available_sd_devices.stdout_lines }}"
+    available_linux_devices: "{{ available_sd_devices.stdout }}"
+
+- name: Make filesystem on Nebulon volume
+  community.general.filesystem:
+    fstype: "{{ fstype }}"
+    dev: "/dev/{{ available_linux_devices }}"
+  when: create_fs
+
+- name: Mount filesystem for Cassandra database
+  ansible.posix.mount:
+    name: "{{ mount_dir }}"
+    src: "/dev/{{ available_linux_devices }}"
+    opts: noatime,nofail
+    fstype: "{{ fstype }}"
+    state: mounted
+  when: create_fs
