@@ -6,3 +6,6 @@ create_fs: true
 
 # Filesystem type - required if create_fs is true (ext4|xfs)
 fstype: xfs
+
+# Directory to mount the volume
+mount_dir: '/data'
