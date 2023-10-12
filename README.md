@@ -17,6 +17,9 @@ Role Variables
     # Filesystem type - required if create_fs is true (ext4|xfs)
     fstype: xfs
 
+    # Directory to mount the volume
+    mount_dir: '/data'
+
 Dependencies
 ------------
 
@@ -62,10 +65,13 @@ Example Playbook
       roles:
         - { role: jeditmt.linux_add_scsi_dev,
             # Create a filesystem (true) or leave as raw device (false)
-            create_fs: true
+            create_fs: true,
 
             # Filesystem type - required if create_fs is true (ext4|xfs)
-            fstype: xfs
+            fstype: xfs,
+
+            # Directory to mount the volume
+            mount_dir: '/data'
         }
 
 License
